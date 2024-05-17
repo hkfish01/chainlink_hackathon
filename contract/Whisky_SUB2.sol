@@ -210,7 +210,7 @@ contract Whisky is ERC721A,
                     : '';
             }
             return bytes(uriOpenPrefix).length > 0
-                    ? string(abi.encodePacked(uriOpenPrefix, strLevel, id.toString(), uriSuffix))
+                    ? string(abi.encodePacked(uriOpenPrefix, strLevel,"/", id.toString(), uriSuffix))
                     : '';
         }
         
