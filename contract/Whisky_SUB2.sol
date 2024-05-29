@@ -250,6 +250,10 @@ contract Whisky is ERC721A,
         require(os);
     }
 
+    function totalMint() public view returns (uint256){
+        return _totalMinted();
+    }
+
     //This function is to overide supportInterface function of ERC721A and ERC2981
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721A, ERC2981) returns (bool) {
         return super.supportsInterface(interfaceId);

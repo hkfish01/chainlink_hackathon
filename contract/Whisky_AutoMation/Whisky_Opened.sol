@@ -12,33 +12,50 @@ import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/inter
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
-contract Whisky is ERC721A, 
+struct Log {
+    uint256 index; // Index of the log in the block
+    uint256 timestamp; // Timestamp of the block containing the log
+    bytes32 txHash; // Hash of the transaction containing the log
+    uint256 blockNumber; // Number of the block containing the log
+    bytes32 blockHash; // Hash of the block containing the log
+    address source; // Address of the contract that emitted the log
+    bytes32[] topics; // Indexed topics of the log
+    bytes data; // Data of the log
+}
+
+interface ILogAutomation {
+    function checkLog(
+        Log calldata log,
+        bytes memory checkData
+    ) external returns (bool upkeepNeeded, bytes memory performData);
+
+    function performUpkeep(bytes calldata performData) external;
+}
+
+
+contract WhiskyOpen is ERC721A, 
                    ReentrancyGuard, 
                    ERC2981,
-                   VRFConsumerBaseV2Plus{
+                   VRFConsumerBaseV2Plus,
+                   ILogAutomation{
 
     using Strings for uint;
     
     // contract
-    uint public cost = 0.0000002 ether;
-    uint public maxSupply = 10000;
-    uint public maxMintAmountPerTx = 20;
+    uint constant public maxSupply = 1000;
     string public contractURI = '';  // URL for the storefront-level metadata for contract
-    bool public isSaleActive = false;   // is sale?
-
     string public uriPrefix = '';    // base uri
-    string public uriOpenPrefix = ''; // open status uri 
     string public uriSuffix = '.json';   // base extension
 
-    mapping (uint=>bool) public openStatus;
-    mapping (uint=>uint) public tokenId2Num;
+    struct OpenTokenLevel{
+        string level;
+        uint openTokenId;
+    }
+    mapping (uint=>OpenTokenLevel) public tokenId2openTokenId;
 
-    string constant Common ='common';
-    string constant Uncommon ='uncommon';
-    string constant Rare ='rare';
-    string constant Epic ='epic';
-    string constant Legendary ='legendary';
-
+    string[5] Levels = ['legendary','epic','rare','uncommon','common'];
+    uint8[5] LevelPercentage = [2,8,15,25,50];
+    uint16[5] LevelUsedCount = [0,0,0,0,0];
 
     // VRF
     struct RequestStatus {
@@ -58,12 +75,12 @@ contract Whisky is ERC721A,
     uint256 public lastRequestId;
 
     // arb sepolia
-    address constant VRFCoordinator = 0x5CE8D5A2BC84beb22a398CCA51996F7930313D61;
-    bytes32 keyHash = 0x1770bdc7eec7771f7ba4ffd640f34260d7f095b79c92d34a5b2551d6f6cfd2be;
+    //address constant VRFCoordinator = 0x5CE8D5A2BC84beb22a398CCA51996F7930313D61;
+    //bytes32 keyHash = 0x1770bdc7eec7771f7ba4ffd640f34260d7f095b79c92d34a5b2551d6f6cfd2be;
 
     // eth sepolia
-    // address constant VRFCoordinator = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
-    // bytes32 keyHash = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    address constant VRFCoordinator = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
+    bytes32 keyHash = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 callbackGasLimit = 2500000;
     uint16 requestConfirmations = 3;
     uint32 numWords = 1;
@@ -74,38 +91,23 @@ contract Whisky is ERC721A,
     event RequestFulfilled(uint256 requestId, uint tokenId, uint256[] randomWords);
 
     constructor(string memory _uriPrefix,
-                string memory _uriOpenPrefix,
                 string memory _contractUri,
                 uint256 subscriptionId) 
-                ERC721A("Whisky", "WKY") 
+                ERC721A("WhiskyOpen", "WKYO")
                 VRFConsumerBaseV2Plus(VRFCoordinator){
 
         COORDINATOR = IVRFCoordinatorV2Plus(VRFCoordinator);
         s_subscriptionId = subscriptionId;
-
         setUriPrefix(_uriPrefix);
-        setUriOpenPrefix(_uriOpenPrefix);
 
         contractURI = _contractUri;
     }
 
-    // ~~~~~~~~~~~~~~~~~~~~ Modifiers ~~~~~~~~~~~~~~~~~~~~
-    modifier mintCompliance(uint256 _mintAmount) {
-        require(isSaleActive, 'not started');
-        require(_mintAmount > 0 && _mintAmount <= maxMintAmountPerTx, 'invalid mint amount!');
-        require(_totalMinted() + _mintAmount <= maxSupply, 'max supply exceeded!');
-        require(msg.value >= cost * _mintAmount, 'insufficient funds!');
-        _;
-    }
-
     // ~~~~~~~~~~~~~~~~~~~~ Public Functions ~~~~~~~~~~~~~~~~~~~~
-    function mint(uint _mintAmount) public payable mintCompliance(_mintAmount) {
-        uint startId = _totalMinted();
-        _safeMint(msg.sender, _mintAmount);
-        uint endId = startId + _mintAmount;
-        for(uint i = startId; i < endId; i++) {
-            openStatus[i] = false;
-        }
+    function mint(address sender) public onlyOwner {
+        require(_totalMinted() + 1 <= maxSupply, 'max supply exceeded!');
+        _safeMint(sender, 1);
+        requestRandomWords(_totalMinted()-1);
     }
 
     function burn(uint256 tokenId) public {
@@ -113,17 +115,26 @@ contract Whisky is ERC721A,
         return;
     }
 
+    function checkLog(Log calldata log,bytes memory ) 
+                external pure returns (bool upkeepNeeded, bytes memory performData) {
+        upkeepNeeded = true;
+        address burnOwner = bytes32ToAddress(log.topics[1]);
+        performData = abi.encode(burnOwner);
+    }
 
-    function open(uint _tokenId) public{
-        require(_exists(_tokenId), 'nonexistent token');
-        require(!openStatus[_tokenId], 'opened');
-        require(msg.sender == getApproved(_tokenId) || msg.sender == ownerOf(_tokenId),'no permission');
-        openStatus[_tokenId] = true;
-        requestRandomWords(_tokenId);
+    function performUpkeep(bytes calldata performData) external override {
+        address burnOwner = abi.decode(performData, (address));
+        _safeMint(burnOwner, 1);
+        requestRandomWords(_totalMinted()-1);
+    }
+
+    function bytes32ToAddress(bytes32 _address) public pure returns (address) {
+        return address(uint160(uint256(_address)));
     }
 
 
-    function requestRandomWords(uint _tokenId) internal returns (uint256 requestId)
+
+    function requestRandomWords(uint256 _tokenId) internal returns (uint256 requestId)
     {
         // Will revert if subscription is not set and funded.
         requestId = COORDINATOR.requestRandomWords(
@@ -150,80 +161,75 @@ contract Whisky is ERC721A,
         return requestId;
     }
 
+
     function fulfillRandomWords(
         uint256 _requestId,
-        uint256[] memory _randomWords
+        uint256[] calldata _randomWords
     ) internal override {
         require(s_requests[_requestId].exists, "request not found");
         s_requests[_requestId].fulfilled = true;
         s_requests[_requestId].randomWords = _randomWords;
-        tokenId2Num[s_requests[_requestId].tokenId] = _randomWords[0];
+
+        _getOpenTokenId(s_requests[_requestId].tokenId, _randomWords[0]);
         emit RequestFulfilled(_requestId, s_requests[_requestId].tokenId, _randomWords);
     }
 
+    function _getOpenTokenId(uint _tokenId, uint _randomNum) private returns(OpenTokenLevel memory){
+        uint nid =  (_randomNum % 100)+1;
+        if(nid <=2){
+            tokenId2openTokenId[_tokenId] = _getLevelId(0);
+        }else if(nid>2 && nid <=10){
+            tokenId2openTokenId[_tokenId] = _getLevelId(1);
+        }else if(nid>10 && nid <=25){
+            tokenId2openTokenId[_tokenId] = _getLevelId(2);
+        }else if(nid>25 && nid <=50){
+            tokenId2openTokenId[_tokenId] = _getLevelId(3);
+        }else{
+            tokenId2openTokenId[_tokenId] = _getLevelId(4);
+        }
+        return tokenId2openTokenId[_tokenId];
+    }
+
+    function _getLevelId(uint levelsIndex)private returns(OpenTokenLevel memory){
+        if(levelsIndex<0 || levelsIndex>=5) revert("exceeds data boundaries");
+        OpenTokenLevel memory tokenlevel;
+
+        // 
+        if(LevelUsedCount[levelsIndex]< (LevelPercentage[levelsIndex]* maxSupply)/100 ){
+            tokenlevel.level = Levels[levelsIndex];
+            tokenlevel.openTokenId = LevelUsedCount[levelsIndex];
+            LevelUsedCount[levelsIndex] += 1;
+        }else{
+            tokenlevel = _getLevelId(levelsIndex+1);
+        }
+        return tokenlevel;
+    }
 
     // ~~~~~~~~~~~~~~~~~~~~ Various Checks ~~~~~~~~~~~~~~~~~~~~ 
     function tokenURI(uint _tokenId) public view virtual override returns (string memory) {
         require(_exists(_tokenId), 'nonexistent token');
+        string memory strLevel = tokenId2openTokenId[_tokenId].level;
+        uint id = tokenId2openTokenId[_tokenId].openTokenId;
 
-        string memory currentBaseURI = uriPrefix;
-        uint nid = _tokenId;
-        
-        if(openStatus[_tokenId]){
-            currentBaseURI = uriOpenPrefix;
-            string memory level;
-            if(tokenId2Num[_tokenId] == 0){
-                return bytes(currentBaseURI).length > 0
-                    ? string(abi.encodePacked(currentBaseURI, "temp", uriSuffix))
-                    : '';
-            }
-            nid =  (tokenId2Num[_tokenId] % 100)+1;
-            if(nid <=2){
-                level = Legendary;
-            }else if(nid>2 && nid <=10){
-                level = Epic;
-            }else if(nid>10 && nid <=25){
-                level = Rare;
-            }else if(nid>25 && nid <=50){
-                level = Uncommon;
-            }else{
-                level = Common;
-            }
-
-            return bytes(currentBaseURI).length > 0
-                    ? string(abi.encodePacked(currentBaseURI, nid.toString(),"/", level, uriSuffix))
-                    : '';
+        if(bytes(strLevel).length == 0){
+            return bytes(uriPrefix).length > 0
+                ? string(abi.encodePacked(uriPrefix, "temp", uriSuffix))
+                : '';
         }
-        
-        return bytes(currentBaseURI).length > 0
-                    ? string(abi.encodePacked(currentBaseURI, nid.toString(), uriSuffix))
-                    : '';
+        return bytes(uriPrefix).length > 0
+                ? string(abi.encodePacked(uriPrefix, strLevel,"/", id.toString(), uriSuffix))
+                : '';
         
     }
 
     // ~~~~~~~~~~~~~~~~~~~~ onlyOwner Functions ~~~~~~~~~~~~~~~~~~~~
+
     function setContractURI(string memory _contractUri) public onlyOwner{
         contractURI = _contractUri;
     }
 
-    function setSaleActive() public onlyOwner{
-        isSaleActive = !isSaleActive;
-    }
-
-    function setCost(uint _cost) public onlyOwner {
-        cost = _cost;
-    }
-
-    function setMaxMintAmountPerTx(uint _maxMintAmountPerTx) public onlyOwner {
-        maxMintAmountPerTx = _maxMintAmountPerTx;
-    }
-
     function setUriPrefix(string memory _uriPrefix) public onlyOwner {
         uriPrefix = _uriPrefix;
-    }
-
-    function setUriOpenPrefix(string memory _uriOpenPrefix) public onlyOwner {
-        uriOpenPrefix = _uriOpenPrefix;
     }
 
     function setUriSuffix(string memory _uriSuffix) public onlyOwner {

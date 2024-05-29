@@ -1,0 +1,53 @@
+1 st contract: (1000個nft)
+https://nftstorage.link/ipfs/bafybeici3ejk53rujwq5geaywf4eqmqnmpmgfczsupi456aad7idjcs55y/
+
+2 st 
+https://nftstorage.link/ipfs/bafybeiellevmwvjs5fgykfm7dbrxmxj7qyizrotet7gdnnfikqquf5bu7a/
+
+
+
+chainlink的subId
+eth sepolia
+subId  97258712207342906334292308005977532714681072602041934296482770758502314452041
+
+arb sepolia
+subId  25025430329030543285207731934138940376082710773127008428737482571434062515643
+
+
+部署时注意：
+           1、每次变更whiskyOpen.sol时，都要在Automation和VRF中变更地址；
+           2、VRF在变更链时，需要修改VRFCoordinator，keyHash和subId
+
+测试链为Arb sepolia
+使用Chainlink Automation技术后的合约
+部署合约使用的地址：0x4e96a8101EadE082A4F29597d103a2404274f01D
+1、whisky.sol
+   部署参数：_uriPrefix = "https://nftstorage.link/ipfs/bafybeici3ejk53rujwq5geaywf4eqmqnmpmgfczsupi456aad7idjcs55y/"
+            _contractUri = ""
+   合约地址：
+
+2、whiskyOpen.sol（用到VRF和Automation）
+   部署参数：_uriPrefix = "https://nftstorage.link/ipfs/bafybeiellevmwvjs5fgykfm7dbrxmxj7qyizrotet7gdnnfikqquf5bu7a/"
+            _contractUri = ""
+            subscriptionId = 25025430329030543285207731934138940376082710773127008428737482571434062515643
+   合约地址：
+
+
+
+测试链为 sepolia
+使用Chainlink Automation技术后的合约
+部署合约使用的地址：0x4e96a8101EadE082A4F29597d103a2404274f01D
+1、whisky.sol
+   部署参数：_uriPrefix = "https://nftstorage.link/ipfs/bafybeici3ejk53rujwq5geaywf4eqmqnmpmgfczsupi456aad7idjcs55y/"
+            _contractUri = ""
+   合约地址：0x62BA4DE7080D7E358AbE4F69337777E28b306caD
+   https://sepolia.etherscan.io/address/0x62ba4de7080d7e358abe4f69337777e28b306cad
+
+2、whiskyOpen.sol（用到VRF和Automation）
+   部署参数：_uriPrefix = "https://nftstorage.link/ipfs/bafybeiellevmwvjs5fgykfm7dbrxmxj7qyizrotet7gdnnfikqquf5bu7a/"
+            _contractUri = ""
+            subscriptionId = 97258712207342906334292308005977532714681072602041934296482770758502314452041
+   合约地址：0x589469Ac6bA85c441c91DcA4A4A1a88BAe556aBE
+   https://sepolia.etherscan.io/address/0x589469ac6ba85c441c91dca4a4a1a88bae556abe
+
+   
