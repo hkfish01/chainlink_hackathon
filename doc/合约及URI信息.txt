@@ -40,8 +40,8 @@ subId  2502543032903054328520773193413894037608271077312700842873748257143406251
 1、whisky.sol
    部署参数：_uriPrefix = "https://nftstorage.link/ipfs/bafybeici3ejk53rujwq5geaywf4eqmqnmpmgfczsupi456aad7idjcs55y/"
             _contractUri = ""
-   合约地址：0x62BA4DE7080D7E358AbE4F69337777E28b306caD
-   https://sepolia.etherscan.io/address/0x62ba4de7080d7e358abe4f69337777e28b306cad
+   合约地址：0x314e34EFfdA6999CF633c737daC961B0907061eF
+   https://sepolia.etherscan.io/address/0x314e34effda6999cf633c737dac961b0907061ef
 
 2、whiskyOpen.sol（用到VRF和Automation）
    部署参数：_uriPrefix = "https://nftstorage.link/ipfs/bafybeiellevmwvjs5fgykfm7dbrxmxj7qyizrotet7gdnnfikqquf5bu7a/"

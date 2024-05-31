@@ -106,8 +106,9 @@ contract WhiskyOpen is ERC721A,
     // ~~~~~~~~~~~~~~~~~~~~ Public Functions ~~~~~~~~~~~~~~~~~~~~
     function mint(address sender) public onlyOwner {
         require(_totalMinted() + 1 <= maxSupply, 'max supply exceeded!');
+        uint256 tid = _nextTokenId();
         _safeMint(sender, 1);
-        requestRandomWords(_totalMinted()-1);
+        requestRandomWords(tid);
     }
 
     function burn(uint256 tokenId) public {
@@ -124,8 +125,9 @@ contract WhiskyOpen is ERC721A,
 
     function performUpkeep(bytes calldata performData) external override {
         address burnOwner = abi.decode(performData, (address));
+        uint256 tid = _nextTokenId();
         _safeMint(burnOwner, 1);
-        requestRandomWords(_totalMinted()-1);
+        requestRandomWords(tid);
     }
 
     function bytes32ToAddress(bytes32 _address) public pure returns (address) {

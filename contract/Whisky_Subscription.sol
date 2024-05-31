@@ -100,7 +100,7 @@ contract Whisky is ERC721A,
 
     // ~~~~~~~~~~~~~~~~~~~~ Public Functions ~~~~~~~~~~~~~~~~~~~~
     function mint(uint _mintAmount) public payable mintCompliance(_mintAmount) {
-        uint startId = _totalMinted();
+        uint startId = _nextTokenId();
         _safeMint(msg.sender, _mintAmount);
         uint endId = startId + _mintAmount;
         for(uint i = startId; i < endId; i++) {
