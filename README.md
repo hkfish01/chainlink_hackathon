@@ -20,7 +20,7 @@ opened ipfs meta: https://nftstorage.link/ipfs/bafybeiellevmwvjs5fgykfm7dbrxmxj7
               subscriptionId = 97258712207342906334292308005977532714681072602041934296482770758502314452041
 
 ### chainlink feature:
-VRF：https://github.com/hkfish01/chainlink_hackathon/blob/main/contract/Whisky_AutoMation/Whisky_Opened.sol#L13  
+VRF：https://github.com/hkfish01/chainlink_hackathon/blob/main/contract/Whisky_AutoMation/Whisky_Opened.sol#L139  
 Automation：https://github.com/hkfish01/chainlink_hackathon/blob/main/contract/Whisky_AutoMation/Whisky_Opened.sol#L119
 
 ### chainlikn feature management link:
