@@ -18,23 +18,23 @@
 项目名称是一个基于Vue.js构建的前端应用。本项目采用了Vue CLI进行脚手架搭建。
 
 ## 项目结构
-项目根目录
-├── public/ // 静态资源
-├── src/ // 源代码
-│ ├── assets/ // 资源文件
-│ ├── libs/ // 第三方库
-│ ├── views/ // 视图文件
-│ ├── router/ // 路由配置
-│ ├── x/ // 中间件、api、工具类
-│ ├── App.vue // 根组件
-│ └── main.js // 入口文件
-├── .gitignore // Git忽略文件配置
-├── babel.config.js // Babel配置
-├── package.json // 项目依赖及脚本
-├── README.md // 项目说明文件
-└── vue.config.js // Vue CLI 配置
-
-
+```plaintext
+   项目根目录
+   ├── public/                     // 静态资源
+   ├── src/                        // 源代码
+   │   ├── assets/                 // 资源文件
+   │   ├── libs/                   // 库文件
+   │   ├── views/                  // 视图文件
+   │   ├── router/                 // 路由配置
+   │   ├── x/                      // 中间件、api、工具类
+   │   ├── App.vue                 // 根组件
+   │   └── main.js                 // 入口文件
+   ├── .gitignore                  // Git忽略文件配置
+   ├── babel.config.js             // Babel配置
+   ├── package.json                // 项目依赖及脚本
+   ├── README.md                   // 项目说明文件
+   └── vue.config.js               // Vue CLI 配置
+```
 
 ## 安装与运行
 
