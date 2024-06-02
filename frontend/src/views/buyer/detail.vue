@@ -5,11 +5,12 @@
     </div>
     <div class="font-bold text-[18px] mt-2">Name: {{ nftName }}</div>
     <div class="text-[18px] mt-2" v-if="currentCost">Current Price: {{ currentCost }}ETH</div>
-    <el-button v-if="isOpen" disabled class="mt-6 w-[fit-content] m-auto !px-[40px]">Has Opened !</el-button>
+    <!-- <el-button v-if="isOpen" disabled class="mt-6 w-[fit-content] m-auto !px-[40px]">Has Opened !</el-button>
     <template v-else>
       <el-button v-if="hasFinished" @click="actionDone" type="primary" class="bg-[#409eff] mt-6 w-[fit-content] m-auto !px-[40px]">Done</el-button>
       <el-button v-else @click="actionOpen" type="primary" class="bg-[#409eff] mt-6 w-[fit-content] m-auto !px-[40px]">Open it</el-button>
-    </template>
+    </template> -->
+    <el-button v-if="isOpen && hasFinished" @click="actionDone" type="primary" class="bg-[#409eff] mt-6 w-[fit-content] m-auto !px-[40px]">Done</el-button>
   </div>
 </template>
 
@@ -17,7 +18,7 @@
 import web3Util from "@/x/utils/web3"
 import MintCls from "@/x/utils/mint"
 import { useRoute, useRouter } from 'vue-router'
-import { computed, onBeforeMount, ref } from "vue"
+import { computed, onBeforeMount, onMounted, ref } from "vue"
 const route = useRoute()
 const router = useRouter()
 import { ElLoading, ElMessage } from 'element-plus'
@@ -43,6 +44,14 @@ const isOpen = computed(() => {
 onBeforeMount(() => {
   getNFTMetadata()
   getCurrentCost()
+})
+
+onMounted(() => {
+  if(isOpen.value) {
+    setTimeout(() => {
+      actionOpen()
+    }, 100)
+  }
 })
 
 const MintClsInstance = MintCls.instance
@@ -98,6 +107,7 @@ async function actionOpen() {
 function actionDone() {
   router.replace({ name: 'buyerNftList' })
 }
+
 const nftImage = ref("")
 const nftName = ref("")
 async function getNFTMetadata() {
